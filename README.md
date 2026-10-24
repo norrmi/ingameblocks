@@ -2,10 +2,6 @@
 
 Make your own blocks in-game: a picture, a name, a block type and a sound. Blocks are stored on your own computer (`.minecraft/ingameblocks/`), and you can share them with other players who have the mod on the same server.
 
-## Building
-Requires **JDK 25** (not 27). Run `gradlew build`; the jar appears in `build/libs/`. To test, run `gradlew runClient`.
-The mod must be installed on **both the server and the players' clients**. In single player it works on its own.
-
 ## Usage
 * **B** — open the menu (configurable in Controls). Tabs: **My blocks** (your blocks) and **Shared blocks** (blocks other players share). Your shared blocks are highlighted in blue.
 * Drag PNG, JPG or **WebP** pictures into the window (16, 32, 64, 128 or 256 px; non-square pictures are cropped to the centre), or exported `.zip` blocks.
