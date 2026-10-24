@@ -1,0 +1,1 @@
+{"type":"minecraft:block","pools":[{"condition":{"type":"minecraft:survives_explosion"},"entries":[{"type":"minecraft:item","name":"ingameblocks:cube","modifier":[{"type":"minecraft:copy_state","block":"ingameblocks:cube","properties":["design"]}]}],"rolls":1}],"random_sequence":"ingameblocks:blocks/cube"}

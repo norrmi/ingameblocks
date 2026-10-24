@@ -1,0 +1,77 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+repositories {
+	mavenCentral()
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"ingameblocks" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// WebP support (pure Java). Loaded by reflection, so the mod still works if it is missing.
+	// "include" bundles the jars inside the mod jar (jar-in-jar); it is not transitive, so every module is listed.
+	def tm = project.twelvemonkeys_version
+	include(implementation("com.twelvemonkeys.imageio:imageio-webp:${tm}"))
+	include("com.twelvemonkeys.imageio:imageio-core:${tm}")
+	include("com.twelvemonkeys.imageio:imageio-metadata:${tm}")
+	include("com.twelvemonkeys.common:common-lang:${tm}")
+	include("com.twelvemonkeys.common:common-io:${tm}")
+	include("com.twelvemonkeys.common:common-image:${tm}")
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+	it.options.encoding = "UTF-8"
+}
+
+java {
+	// Loom will automatically attach sourcesJar to the "build" task if it is present.
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName" }
+	}
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+}

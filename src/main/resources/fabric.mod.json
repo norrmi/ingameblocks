@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "ingameblocks",
+	"version": "${version}",
+	"name": "InGameBlocks",
+	"description": "Make your own blocks right in the game: pick a picture or paint one, choose a shape (block, slab, stairs, fence, carpet, flower, head, chest, anvil, piston-look ...) and a sound. Your textures stay on your computer; share them with other players who have the mod if you like.",
+	"authors": [
+		"norrmi"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/ingameblocks/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"dev.norrmi.ingameblocks.InGameBlocks"
+		],
+		"client": [
+			"dev.norrmi.ingameblocks.client.InGameBlocksClient"
+		]
+	},
+	"mixins": [
+		"ingameblocks.mixins.json",
+		{
+			"config": "ingameblocks.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
