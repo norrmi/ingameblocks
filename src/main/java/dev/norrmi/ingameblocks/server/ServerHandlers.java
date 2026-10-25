@@ -169,7 +169,7 @@ public final class ServerHandlers {
 		}
 
 		BlockInfo info = new BlockInfo(kind, index, ownerUuid, player.getName().getString(), localId, name, hash, faces,
-				sound, packet.shared(), false);
+				sound, packet.shared(), false, packet.seeThrough());
 
 		// Shared blocks must come with every texture they need (or the server must already have it).
 		Map<String, byte[]> provided = new HashMap<>();

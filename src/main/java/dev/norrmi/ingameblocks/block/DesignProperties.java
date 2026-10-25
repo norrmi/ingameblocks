@@ -1,5 +1,6 @@
 package dev.norrmi.ingameblocks.block;
 
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 /**
@@ -11,6 +12,11 @@ public final class DesignProperties {
 	public static final IntegerProperty D1024 = IntegerProperty.create(NAME, 0, 1023);
 	public static final IntegerProperty D256 = IntegerProperty.create(NAME, 0, 255);
 	public static final IntegerProperty D128 = IntegerProperty.create(NAME, 0, 127);
+	/**
+	 * True for designs whose picture has transparent pixels. Such blocks must not hide the faces of their neighbours,
+	 * otherwise you look through the hole into the void.
+	 */
+	public static final BooleanProperty SEE_THROUGH = BooleanProperty.create("see_through");
 
 	private DesignProperties() {
 	}

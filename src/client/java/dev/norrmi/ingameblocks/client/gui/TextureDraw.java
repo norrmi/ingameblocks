@@ -52,36 +52,44 @@ public final class TextureDraw {
 		return CACHE.get(key);
 	}
 
+	/** GPU copies of the pictures shown in menus (pictures from {@link #image} never change, so no re-upload is needed). */
+	private static final Map<PixelImage, GuiTexture> TEXTURES = new LinkedHashMap<>(64, 0.75F, true);
+	private static final Map<PixelImage, Long> LAST_USED = new java.util.HashMap<>();
+	private static final int TEXTURE_LIMIT = 256;
+	private static final long KEEP_NANOS = 3_000_000_000L;
+
 	/** Draws {@code image} into the square (x, y, size, size). Transparent pixels show a checkerboard. */
 	public static void draw(GuiGraphicsExtractor graphics, PixelImage image, int x, int y, int size) {
 		if (image == null || size <= 0) {
 			return;
 		}
-		int w = image.width();
-		int h = image.height();
-		for (int ty = 0; ty < size; ty++) {
-			int sy = ty * h / size;
-			int runStart = 0;
-			int runColor = sample(image, 0, sy, 0, ty);
-			for (int tx = 1; tx <= size; tx++) {
-				int color = tx < size ? sample(image, tx * w / size, sy, tx, ty) : 0;
-				if (tx == size || color != runColor) {
-					graphics.fill(x + runStart, y + ty, x + tx, y + ty + 1, runColor);
-					runStart = tx;
-					runColor = color;
-				}
-			}
+		long now = System.nanoTime();
+		GuiTexture texture = TEXTURES.get(image);
+		if (texture == null) {
+			evictOld(now);
+			texture = new GuiTexture("tile");
+			texture.update(image);
+			TEXTURES.put(image, texture);
 		}
+		LAST_USED.put(image, now);
+		texture.blit(graphics, x, y, size, size);
 	}
 
-	/** Pixel colour blended over the checkerboard. */
-	private static int sample(PixelImage image, int sx, int sy, int tx, int ty) {
-		int c = image.get(Math.min(sx, image.width() - 1), sy);
-		if (c >>> 24 == 255) {
-			return c;
+	/** Frees textures that were not drawn for a few seconds once there are many of them. */
+	private static void evictOld(long now) {
+		if (TEXTURES.size() < TEXTURE_LIMIT) {
+			return;
 		}
-		int checker = ((tx >> 2) + (ty >> 2)) % 2 == 0 ? CHECKER_LIGHT : CHECKER_DARK;
-		return blend(checker, c);
+		var it = TEXTURES.entrySet().iterator();
+		while (it.hasNext()) {
+			var entry = it.next();
+			Long used = LAST_USED.get(entry.getKey());
+			if (used == null || now - used > KEEP_NANOS) {
+				entry.getValue().release();
+				LAST_USED.remove(entry.getKey());
+				it.remove();
+			}
+		}
 	}
 
 	/** Source-over blend of {@code top} onto an opaque {@code bottom}. */

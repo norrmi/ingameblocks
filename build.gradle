@@ -55,8 +55,10 @@ java {
 	// Loom will automatically attach sourcesJar to the "build" task if it is present.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	// Compile with JDK 25 even if Gradle itself runs on another Java (JAVA_HOME). Gradle finds installed JDKs by itself.
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
 }
 
 jar {

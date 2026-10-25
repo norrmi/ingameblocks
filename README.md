@@ -8,6 +8,7 @@ Make your own blocks in-game: a picture, a name, a block type and a sound. Block
 * Click to select a block. Double-click or right-click your own block to rename it. Shift+click takes a stack. **Edit** opens the editor: name, id, **type** (full block, glass, slab, stairs, fence, carpet, plant/flower, head, chest, anvil, piston), **sound** of any vanilla block (default: the sound of the type), sharing, and **a separate picture for each side**.
 * **Paint** is a built-in texture editor: brush (size, opacity, softness, round or square tip, mirror X), eraser, fill, colour picker (or right-click), line, rectangle (Shift for filled), undo/redo (Ctrl+Z / Ctrl+Y), zoom with the mouse wheel, pan with the middle button. You can repaint your own, vanilla and other players' textures via **Choose…** (tabs: Mine / Minecraft / Shared).
 * **Export** saves a block as a `.zip` (in the `ingameblocks/exports` folder) that a friend can drop into their menu.
+* Pictures with transparent pixels stay see-through in the world: the block does not hide the blocks behind it, so there is no hole into the void.
 * Your blocks keep their identity (a `uid` stored in `library.json`), so you can keep editing them after reconnecting, and editing does not create duplicates.
 
 ## Commands

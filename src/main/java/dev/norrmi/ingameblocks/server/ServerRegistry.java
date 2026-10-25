@@ -248,6 +248,7 @@ public final class ServerRegistry implements Designs.Lookup {
 				o.add("faces", faces);
 				o.addProperty("sound", info.sound());
 				o.addProperty("shared", info.shared());
+				o.addProperty("seeThrough", info.seeThrough());
 				array.add(o);
 			}
 		}
@@ -304,7 +305,8 @@ public final class ServerRegistry implements Designs.Lookup {
 							o.get("hash").getAsString(),
 							faces, sound,
 							o.has("shared") && o.get("shared").getAsBoolean(),
-							false);
+							false,
+							o.has("seeThrough") && o.get("seeThrough").getAsBoolean());
 				} catch (RuntimeException e) {
 					InGameBlocks.LOGGER.warn("Skipping a broken entry in {}: {}", file, e.toString());
 				}

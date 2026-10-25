@@ -25,9 +25,10 @@ import dev.norrmi.ingameblocks.block.BlockKind;
  * @param sound     sound name (see {@link SoundOptions}); empty = the kind's default sound
  * @param shared    true if the creator allows other players to receive the textures
  * @param available true if the server currently holds all texture files and can hand them out
+ * @param seeThrough true if a texture of the block has transparent pixels (the block must not hide its neighbours)
  */
 public record BlockInfo(BlockKind kind, int index, String ownerUuid, String ownerName, String localId, String name,
-						String hash, List<String> faces, String sound, boolean shared, boolean available) {
+						String hash, List<String> faces, String sound, boolean shared, boolean available, boolean seeThrough) {
 	public static final List<String> NO_FACES = List.of("", "", "", "", "", "");
 
 	/** Identity of a block: creator + id in the creator's library. */
@@ -46,7 +47,7 @@ public record BlockInfo(BlockKind kind, int index, String ownerUuid, String owne
 
 	public BlockInfo withAvailable(boolean value) {
 		return new BlockInfo(this.kind, this.index, this.ownerUuid, this.ownerName, this.localId, this.name, this.hash,
-				this.faces, this.sound, this.shared, value);
+				this.faces, this.sound, this.shared, value, this.seeThrough);
 	}
 
 	/** Hash of the texture that is shown on a face (index into {@link TextureRules#FACE_NAMES}). */
@@ -81,6 +82,7 @@ public record BlockInfo(BlockKind kind, int index, String ownerUuid, String owne
 		buf.writeUtf(this.sound);
 		buf.writeBoolean(this.shared);
 		buf.writeBoolean(this.available);
+		buf.writeBoolean(this.seeThrough);
 	}
 
 	public static BlockInfo read(FriendlyByteBuf buf) {
@@ -102,6 +104,7 @@ public record BlockInfo(BlockKind kind, int index, String ownerUuid, String owne
 		String sound = buf.readUtf();
 		boolean shared = buf.readBoolean();
 		boolean available = buf.readBoolean();
-		return new BlockInfo(kind, index, ownerUuid, ownerName, localId, name, hash, List.copyOf(faces), sound, shared, available);
+		boolean seeThrough = buf.readBoolean();
+		return new BlockInfo(kind, index, ownerUuid, ownerName, localId, name, hash, List.copyOf(faces), sound, shared, available, seeThrough);
 	}
 }

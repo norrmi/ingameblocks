@@ -32,6 +32,7 @@ import dev.norrmi.ingameblocks.InGameBlocks;
 import dev.norrmi.ingameblocks.block.BlockKind;
 import dev.norrmi.ingameblocks.data.BlockInfo;
 import dev.norrmi.ingameblocks.data.SoundOptions;
+import dev.norrmi.ingameblocks.data.PngCodec;
 import dev.norrmi.ingameblocks.data.TextureRules;
 
 /**
@@ -62,7 +63,7 @@ public final class LocalLibrary {
 	 * @param faces  6 PNGs (down, up, north, south, west, east); null = the main texture
 	 */
 	public record Entry(String id, String uid, String name, BlockKind kind, String sound, boolean shared, Path file, byte[] png,
-						String hash, String error, List<byte[]> faces) {
+						String hash, String error, List<byte[]> faces, boolean seeThrough) {
 		public boolean valid() {
 			return this.error == null;
 		}
@@ -292,12 +293,33 @@ public final class LocalLibrary {
 			for (String faceName : TextureRules.FACE_NAMES) {
 				faces.add(error == null ? readFace(id, faceName) : null);
 			}
-			found.add(new Entry(id, uid, name, kind, sound, shared, file, error == null ? png : null, hash, error, faces));
+			boolean seeThrough = false;
+			if (error == null) {
+				seeThrough = hasTransparency(png);
+				for (byte[] facePng : faces) {
+					seeThrough |= facePng != null && hasTransparency(facePng);
+				}
+			}
+			found.add(new Entry(id, uid, name, kind, sound, shared, file, error == null ? png : null, hash, error, faces, seeThrough));
 		}
 		entries = List.copyOf(found);
 		if (settingsChanged) {
 			saveSettings();
 		}
+	}
+
+	/** True if the picture has at least one pixel that is not fully opaque. */
+	static boolean hasTransparency(byte[] png) {
+		try {
+			for (int argb : PngCodec.decode(png).pixels()) {
+				if ((argb >>> 24) != 0xFF) {
+					return true;
+				}
+			}
+		} catch (IOException e) {
+			return false;
+		}
+		return false;
 	}
 
 	/** A new, unique identity for a block: readable, and never equal to the identity of another block. */

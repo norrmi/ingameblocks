@@ -4,6 +4,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BlockItemStateProperties;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -88,6 +89,36 @@ public final class Designs {
 		} catch (RuntimeException e) {
 			return -1;
 		}
+	}
+
+	/** Does this design have transparent pixels? */
+	public static boolean seeThrough(BlockKind kind, int index) {
+		BlockInfo info = get(kind, index);
+		return info != null && info.seeThrough();
+	}
+
+	/**
+	 * Sets {@link DesignProperties#SEE_THROUGH} for a block that is being placed. The design comes from the item,
+	 * because vanilla copies the item's block state component onto the block only after placement.
+	 */
+	public static BlockState withSeeThrough(BlockState state, BlockPlaceContext context, BlockKind kind) {
+		if (state == null || !state.hasProperty(DesignProperties.SEE_THROUGH)) {
+			return state;
+		}
+		int design = designOf(context.getItemInHand(), kind);
+		if (design < 0) {
+			design = state.getValue(DesignProperties.forKind(kind));
+		}
+		return state.setValue(DesignProperties.SEE_THROUGH, seeThrough(kind, design));
+	}
+
+	/** Corrects {@link DesignProperties#SEE_THROUGH} of a placed block (the picture may have changed since). */
+	public static BlockState fixSeeThrough(BlockState state, BlockKind kind) {
+		if (state == null || !state.hasProperty(DesignProperties.SEE_THROUGH)) {
+			return state;
+		}
+		boolean wanted = seeThrough(kind, state.getValue(DesignProperties.forKind(kind)));
+		return state.getValue(DesignProperties.SEE_THROUGH) == wanted ? state : state.setValue(DesignProperties.SEE_THROUGH, wanted);
 	}
 
 	/** Item for middle click on a placed block. */

@@ -41,7 +41,7 @@ public final class ClientNetworking {
 		}
 		List<byte[]> textures = entry.shared() ? entry.allTextures() : new ArrayList<>();
 		ClientPlayNetworking.send(new Payloads.RegisterBlock(entry.uid(), entry.name(), entry.kind().id(), entry.sound(),
-				entry.hash(), entry.faceHashes(), entry.shared(), textures, give));
+				entry.hash(), entry.faceHashes(), entry.shared(), entry.seeThrough(), textures, give));
 	}
 
 	public static void sendGive(String kind, int index, int count) {

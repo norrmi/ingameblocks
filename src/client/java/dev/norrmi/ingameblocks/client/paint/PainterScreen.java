@@ -20,6 +20,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
+import dev.norrmi.ingameblocks.client.gui.GuiTexture;
 import dev.norrmi.ingameblocks.client.gui.TextureDraw;
 import dev.norrmi.ingameblocks.data.PixelImage;
 import dev.norrmi.ingameblocks.data.TextureRules;
@@ -113,6 +114,8 @@ public class PainterScreen extends Screen {
 	private boolean updatingHex;
 	private Component status = Component.empty();
 	private boolean initialized;
+	/** The picture on the GPU (re-uploaded only when pixels change), used for the canvas and the previews. */
+	private final GuiTexture canvasTexture = new GuiTexture("painter");
 
 	public PainterScreen(Screen parent, Component title, PixelImage start, boolean isNew, Consumer<PixelImage> onSave) {
 		super(title);
@@ -945,35 +948,13 @@ public class PainterScreen extends Screen {
 		int x1 = Math.min(this.areaX1, ox + w * z);
 		int y1 = Math.min(this.areaY1, oy + h * z);
 		if (x1 > x0 && y1 > y0) {
-			// Checkerboard behind transparent pixels (screen-space cells, fewer rectangles).
-			int cell = 6;
-			for (int cy = y0; cy < y1; cy += cell) {
-				for (int cx = x0; cx < x1; cx += cell) {
-					boolean light = (((cx - ox) / cell) + ((cy - oy) / cell)) % 2 == 0;
-					graphics.fill(cx, cy, Math.min(cx + cell, x1), Math.min(cy + cell, y1),
-							light ? TextureDraw.CHECKER_LIGHT : TextureDraw.CHECKER_DARK);
-				}
-			}
-			// Pixels, merged into runs of the same colour per row.
+			// The whole picture (with a checkerboard behind transparent pixels) is one textured quad.
+			this.canvasTexture.update(this.image);
+			this.canvasTexture.blit(graphics, ox, oy, w * z, h * z);
 			int firstRow = Math.max(0, (y0 - oy) / z);
 			int lastRow = Math.min(h - 1, (y1 - oy - 1) / z);
 			int firstCol = Math.max(0, (x0 - ox) / z);
 			int lastCol = Math.min(w - 1, (x1 - ox - 1) / z);
-			int[] px = this.image.pixels();
-			for (int ty = firstRow; ty <= lastRow; ty++) {
-				int runStart = firstCol;
-				int runColor = px[ty * w + firstCol];
-				for (int tx = firstCol + 1; tx <= lastCol + 1; tx++) {
-					int c = tx <= lastCol ? px[ty * w + tx] : ~runColor;
-					if (c != runColor) {
-						if ((runColor >>> 24) != 0) {
-							graphics.fill(ox + runStart * z, oy + ty * z, ox + tx * z, oy + (ty + 1) * z, runColor);
-						}
-						runStart = tx;
-						runColor = c;
-					}
-				}
-			}
 			if (this.grid && z >= 6) {
 				int lineColor = 0x30000000;
 				for (int tx = firstCol; tx <= lastCol + 1; tx++) {
@@ -992,11 +973,28 @@ public class PainterScreen extends Screen {
 		if (this.inArea(mouseX, mouseY) && this.drag != Drag.PAN && (this.tool == Tool.BRUSH || this.tool == Tool.ERASER
 				|| this.tool == Tool.LINE || this.tool == Tool.RECT)) {
 			int preview = this.tool == Tool.ERASER ? 0x60FFFFFF : (0x70 << 24) | (this.color() & 0xFFFFFF);
-			this.forEachBrushPixel(this.texX(mouseX), this.texY(mouseY), (x, y, cover) -> {
-				if (this.image.inside(x, y)) {
-					graphics.fill(ox + x * z, oy + y * z, ox + (x + 1) * z, oy + (y + 1) * z, preview);
+			// Collect the covered pixels per row, then draw one rectangle per continuous run.
+			int size = this.brushSize + 4;
+			int[] rowMin = new int[size];
+			int[] rowMax = new int[size];
+			Arrays.fill(rowMin, Integer.MAX_VALUE);
+			Arrays.fill(rowMax, Integer.MIN_VALUE);
+			float tx = this.texX(mouseX);
+			float ty = this.texY(mouseY);
+			int top = (int) Math.floor(ty - this.brushSize / 2F) - 1;
+			this.forEachBrushPixel(tx, ty, (x, y, cover) -> {
+				int r = y - top;
+				if (r >= 0 && r < size && this.image.inside(x, y)) {
+					rowMin[r] = Math.min(rowMin[r], x);
+					rowMax[r] = Math.max(rowMax[r], x);
 				}
 			});
+			for (int r = 0; r < size; r++) {
+				if (rowMin[r] <= rowMax[r]) {
+					int y = top + r;
+					graphics.fill(ox + rowMin[r] * z, oy + y * z, ox + (rowMax[r] + 1) * z, oy + (y + 1) * z, preview);
+				}
+			}
 		} else if (this.inArea(mouseX, mouseY) && (this.tool == Tool.FILL || this.tool == Tool.PICKER)) {
 			int x = (int) Math.floor(this.texX(mouseX));
 			int y = (int) Math.floor(this.texY(mouseY));
@@ -1071,9 +1069,18 @@ public class PainterScreen extends Screen {
 		int vy = ry + 18;
 		if (vy + 34 < this.height - 28) {
 			graphics.text(this.font, Component.translatable("ingameblocks.paint.preview"), sx, vy, 0xFFA0A0A0);
-			TextureDraw.draw(graphics, this.image, sx, vy + 10, Math.min(32, this.image.width()));
-			TextureDraw.draw(graphics, this.image, sx + 40, vy + 10, Math.min(64, Math.max(32, this.image.width())));
+			this.canvasTexture.update(this.image);
+			int small = Math.min(32, this.image.width());
+			int big = Math.min(64, Math.max(32, this.image.width()));
+			this.canvasTexture.blit(graphics, sx, vy + 10, small, small);
+			this.canvasTexture.blit(graphics, sx + 40, vy + 10, big, big);
 		}
+	}
+
+	@Override
+	public void removed() {
+		this.canvasTexture.release();
+		super.removed();
 	}
 
 	public boolean isNewTexture() {

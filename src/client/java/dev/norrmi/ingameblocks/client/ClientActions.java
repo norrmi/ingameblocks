@@ -26,6 +26,7 @@ public final class ClientActions {
 				|| !LocalLibrary.matches(entry, info)
 				|| !info.name().equals(entry.name())
 				|| info.shared() != entry.shared()
+				|| info.seeThrough() != entry.seeThrough()
 				|| (entry.shared() && !info.available());
 	}
 
@@ -51,7 +52,7 @@ public final class ClientActions {
 
 	private static String sentState(LocalLibrary.Entry entry, BlockInfo info) {
 		return entry.hash() + "|" + String.join(",", entry.faceHashes()) + "|" + entry.kind().id() + "|" + entry.sound()
-				+ "|" + entry.name() + "|" + entry.shared() + "|" + (info != null && info.available());
+				+ "|" + entry.name() + "|" + entry.shared() + "|" + entry.seeThrough() + "|" + (info != null && info.available());
 	}
 
 	/** Forget what was sent (new connection). */

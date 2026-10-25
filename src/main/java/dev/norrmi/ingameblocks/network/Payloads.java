@@ -67,7 +67,7 @@ public final class Payloads {
 	 * @param faces 6 hashes (down, up, north, south, west, east); an empty string means "same as the main texture"
 	 */
 	public record RegisterBlock(String localId, String name, String kind, String sound, String hash, List<String> faces,
-								boolean shared, List<byte[]> textures, int give) implements CustomPacketPayload {
+								boolean shared, boolean seeThrough, List<byte[]> textures, int give) implements CustomPacketPayload {
 		public static final Type<RegisterBlock> TYPE = new Type<>(InGameBlocks.id("register_block"));
 		public static final StreamCodec<FriendlyByteBuf, RegisterBlock> CODEC = StreamCodec.ofMember(RegisterBlock::write, RegisterBlock::read);
 
@@ -81,6 +81,7 @@ public final class Payloads {
 				buf.writeUtf(this.faces.get(i));
 			}
 			buf.writeBoolean(this.shared);
+			buf.writeBoolean(this.seeThrough);
 			buf.writeVarInt(this.textures.size());
 			for (byte[] png : this.textures) {
 				writeBytes(buf, png);
@@ -99,6 +100,7 @@ public final class Payloads {
 				faces.add(buf.readUtf());
 			}
 			boolean shared = buf.readBoolean();
+			boolean seeThrough = buf.readBoolean();
 			int count = buf.readVarInt();
 			if (count < 0 || count > InGameBlocks.MAX_TEXTURES_PER_BLOCK) {
 				throw new IllegalArgumentException("Too many textures: " + count);
@@ -108,7 +110,7 @@ public final class Payloads {
 				textures.add(readBytes(buf));
 			}
 			int give = buf.readVarInt();
-			return new RegisterBlock(localId, name, kind, sound, hash, List.copyOf(faces), shared, List.copyOf(textures), give);
+			return new RegisterBlock(localId, name, kind, sound, hash, List.copyOf(faces), shared, seeThrough, List.copyOf(textures), give);
 		}
 
 		@Override
